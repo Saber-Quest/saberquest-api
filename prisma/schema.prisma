@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------- USERS -------------------------------------------------------
+
+model User {
+  id String @id
+  username String
+  about String?
+  avatar String @default("http://localhost:3050/image/profile/default.png")
+  banner String @default("http://localhost:3050/image/banner/default.png")
+  border String?
+  preference Int @default(1)
+  rank Int
+  qp Int @default(0)
+  value Int @default(0)
+  diff Int @default(4)
+  autoComplete Boolean @default(false)
+  mod Boolean @default(false)
+  admin Boolean @default(false)
+  banned Boolean @default(false)
+  bannedReason String?
+  discordId String?
+  patreon Boolean @default(false)
+  patreonToken String?
+  challengeHistories ChallengeHistory[]
+  ownership Ownership[]
+}
+
+// ------------------------------------------------------- CHALLENGES -------------------------------------------------------
+
+model ChallengeSet {
+  id Int @id @default(autoincrement())
+  type String @unique
+  name String
+  description String
+  image String?
+  difficulties Difficulty[]
+  challengeHistories ChallengeHistory[]
+  activeChallenges ActivatedChallenge[]
+}
+
+model Difficulty {
+  id Int @id @default(autoincrement())
+  challenge ChallengeSet @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  challengeId Int
+  difficulty Int
+  color String
+  values Decimal[]
+  challengeHistories ChallengeHistory[]
+}
+
+model ChallengeHistory {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge ChallengeSet @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  difficulty Difficulty @relation(fields: [difficultyId], references: [id], onDelete: Cascade)
+  userId String
+  challengeId Int
+  difficultyId Int
+  completedAt DateTime
+  items ChallengeHistoryItem[]
+  qp Int
+  preference Int
+}
+
+model ChallengeHistoryItem {
+  challengeHistory ChallengeHistory @relation(fields: [challengeHistoryId], references: [id], onDelete: Cascade)
+  challengeHistoryId Int
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId String
+  @@id([challengeHistoryId, itemId])
+}
+
+model ActivatedChallenge {
+  id Int @id @default(autoincrement())
+  challengeSet ChallengeSet @relation(fields: [challengeSetId], references: [id], onDelete: Cascade)
+  challengeSetId Int
+  date DateTime
+}
+
+// ------------------------------------------------------- ITEMS -------------------------------------------------------
+
+model Item {
+  id String @id
+  image String
+  name String
+  value Int?
+  rarity Int
+  price Int?
+  shop Shop[]
+  craftedFrom Craft[] @relation("ItemAsIngredient")
+  craftedFrom2 Craft[] @relation("ItemAsOtherIngredient")
+  craftedTo Craft[] @relation("ItemAsProduct")
+  ownership Ownership[]
+  challengeHistories ChallengeHistoryItem[]
+}
+
+model Ownership {
+  id Int @id @default(autoincrement())
+  item Item @relation(fields: [itemId], references: [id])
+  itemId String
+  user User @relation(fields: [userId], references: [id])
+  userId String
+  amount Int
+}
+
+model Shop {
+  id Int @id @default(autoincrement())
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId String
+  date DateTime
+}
+
+model Craft {
+  id Int @id @default(autoincrement())
+  item1 Item @relation(name: "ItemAsIngredient", fields: [item1Id], references: [id], onDelete: Cascade)
+  item2 Item @relation(name: "ItemAsOtherIngredient", fields: [item2Id], references: [id], onDelete: Cascade)
+  product Item @relation(name: "ItemAsProduct", fields: [productId], references: [id], onDelete: Cascade)
+  item1Id String
+  item2Id String
+  productId String
+}

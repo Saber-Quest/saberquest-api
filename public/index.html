@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaberQuest Resource Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+        }
+
+        canvas {
+            min-width: 70vw;
+            max-height: 200px;
+            margin: 20px auto;
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Server Resource Monitor</h1>
+    <h3 id="uptime">API Uptime: --d --h --m</h3>
+
+    <h3>Server CPU Usage (%)</h3>
+    <canvas id="cpuChart"></canvas>
+    <h3>Server Memory Usage (%)</h3>
+    <canvas id="memoryChart"></canvas>
+    <h3>Average API Reponse Time (ms)</h3>
+    <canvas id="responseTimeChart"></canvas>
+    <script>
+        const socket = io("http://localhost:5000"); <!-- Change to your address -->
+
+        let labels = [];
+        let cpuData = [];
+        let memoryData = [];
+        let responseTimeData = [];
+
+        function updateCharts(cpu, memory, responseTime) {
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            labels.push(now);
+            cpuData.push(cpu);
+            memoryData.push(memory);
+            responseTimeData.push(responseTime);
+
+            if (labels.length > 50) {
+                labels.shift();
+                cpuData.shift();
+                memoryData.shift();
+                responseTimeData.shift();
+            }
+
+            cpuChart.data.labels = labels;
+            cpuChart.data.datasets[0].data = cpuData;
+            cpuChart.update();
+
+            memoryChart.data.labels = labels;
+            memoryChart.data.datasets[0].data = memoryData;
+            memoryChart.update();
+
+            responseTimeChart.data.labels = labels;
+            responseTimeChart.data.datasets[0].data = responseTimeData;
+            responseTimeChart.update();
+        }
+
+        socket.on("resource_update", (data) => {
+            if (data.labels) {
+                labels = data.labels;
+                cpuData = data.cpuData;
+                memoryData = data.memoryData;
+                responseTimeData = data.responseTimeData;
+
+                document.getElementById("uptime").innerText = `API uptime: ${data.processUptime}`
+
+                updateCharts(cpuData[cpuData.length - 1], memoryData[memoryData.length - 1], responseTimeData[responseTimeData.length - 1]);
+            } else {
+                document.getElementById("uptime").innerText = `API uptime: ${data.processUptime}`
+                updateCharts(data.cpu, data.memoryUsed, data.avgResponseTime);
+            }
+        });
+
+
+        window.onload = () => {
+            const ctx1 = document.getElementById("cpuChart").getContext("2d");
+            cpuChart = new Chart(ctx1, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "CPU Usage (%)",
+                        borderColor: "red",
+                        data: [10, 50, 10],
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: "rgba(255, 0, 0, 0.2)",
+                        pointRadius: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById("memoryChart").getContext("2d");
+            memoryChart = new Chart(ctx2, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Memory Usage (%)",
+                        borderColor: "blue",
+                        data: [],
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: "rgba(0, 0, 255, 0.2)",
+                        pointRadius: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            const ctx3 = document.getElementById("responseTimeChart").getContext("2d");
+            responseTimeChart = new Chart(ctx3, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Avg Response Time (ms)",
+                        borderColor: "green",
+                        data: [],
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: "rgba(0, 255, 0, 0.2)",
+                        pointRadius: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        };
+
+    </script>
+</body>
+
+</html>
