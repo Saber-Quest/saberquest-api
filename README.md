@@ -7,7 +7,7 @@
 
 
 
-<h1 align="center"><strong>Saber Quest <br>Beat Saber made fun!</strong></h1>
+<h1 align="center"><strong>SaberQuest <br>Beat Saber made fun!</strong></h1>
 
 
 ## Project setup
