@@ -1,16 +1,14 @@
-<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+
+<p align="center">
   <a href="https://saberquest.xyz/" target="_blank">
-    <img src="https://saberquest.xyz/assets/images/Logo.png" width="120" alt="Nest Logo" />
+    <img src="https://saberquest.xyz/assets/images/Logo.png" width="120" alt="SaberQuest Logo" />
   </a>
-  <span style="font-size: 50px; font-weight: bold;">
-    Saber<span style="color:#FFD073;">Quest</span>
-  </span>
-</div>
+</p>
 
 
-<div align="center" style="font-size: 30px">
-    Beat Saber made <span style="color:#FFD073;">fun</span>!
-</div>
+
+<h1 align="center"><strong>Saber Quest <br>Beat Saber made fun!</strong></h1>
+
 
 ## Project setup
 
