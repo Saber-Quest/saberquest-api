@@ -5,15 +5,22 @@
   </a>
 </p>
 
-
-
 <h1 align="center"><strong>SaberQuest <br>Beat Saber made fun!</strong></h1>
-
 
 ## Project setup
 
 ```bash
 $ pnpm install
+```
+
+## Database setup
+
+```bash
+# running the PostgreSQL docker
+$ docker compose up -d
+
+# using prisma to migrate and seed database
+$ npx prisma migrate dev --name init
 ```
 
 ## Compile and run the project
