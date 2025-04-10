@@ -58,3 +58,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # SaberQuest specific
 prisma/migrations
 data/avatars/*
+data/banners/hor/*
+data/banners/ver/*

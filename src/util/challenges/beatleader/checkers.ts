@@ -3,9 +3,9 @@ import { BeatSaver } from "yabsl";
 
 // ------------------------------------- PP -------------------------------------
 
-export async function pp(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function pp(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        if (parseInt(score.timeset) >= todayUnix && score.pp >= challenge[1]) {
+        if (score.timepost >= todayUnix && score.pp >= challenge[1]) {
             return true;
         }
     }
@@ -15,10 +15,10 @@ export async function pp(challenge: number[], todayUnix: number, scores: BLScore
 
 // ------------------------------------- MAP -------------------------------------
 
-export async function map(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function map(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     let maps = 0;
     scores.data.forEach((score) => {
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             maps++;
         }
     });
@@ -32,22 +32,13 @@ export async function map(challenge: number[], todayUnix: number, scores: BLScor
 
 // ------------------------------------- FCNOTES -------------------------------------
 
-export async function fcnotes(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function fcnotes(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             if (score.fullCombo) {
-                const map = await BeatSaver.maps.hash(score.leaderboard.song.hash);
-
-                for (const diff of map.versions[0].diffs) {
-                    if (diff.difficulty === score.leaderboard.difficulty.difficultyName) {
-                        if (diff.notes >= challenge[0]) {
-                            return true;
-                        }
-                    }
+                if (score.leaderboard.difficulty.notes >= challenge[1]) {
+                    return true;
                 }
-
-                await new Promise((resolve) => setTimeout(resolve, 50));
             }
         }
     }
@@ -57,18 +48,11 @@ export async function fcnotes(challenge: number[], todayUnix: number, scores: BL
 
 // ------------------------------------- PASSNOTES -------------------------------------
 
-export async function passnotes(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function passnotes(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        if (parseInt(score.timeset) >= todayUnix) {
-            const map = await BeatSaver.maps.hash(score.leaderboard.song.hash);
-
-            for (const diff of map.versions[0].diffs) {
-                if (diff.difficulty === score.leaderboard.difficulty.difficultyName) {
-                    if (diff.notes >= challenge[0]) {
-                        return true;
-                    }
-                }
+        if (score.timepost >= todayUnix) {
+            if (score.leaderboard.difficulty.notes >= challenge[1]) {
+                return true;
             }
         }
     }
@@ -78,9 +62,9 @@ export async function passnotes(challenge: number[], todayUnix: number, scores: 
 
 // ------------------------------------- FCSTARS -------------------------------------
 
-export async function fcstars(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function fcstars(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             if (score.fullCombo && score.leaderboard.difficulty.stars >= challenge[1]) {
                 return true;
             }
@@ -92,9 +76,9 @@ export async function fcstars(challenge: number[], todayUnix: number, scores: BL
 
 // ------------------------------------- XACCURACYSTARS -------------------------------------
 
-export async function xaccuracystars(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function xaccuracystars(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             if ((score.accuracy * 100) >= challenge[2] && score.leaderboard.difficulty.stars >= challenge[1]) {
                 return true;
             }
@@ -106,9 +90,9 @@ export async function xaccuracystars(challenge: number[], todayUnix: number, sco
 
 // ------------------------------------- XACCURACYPP -------------------------------------
 
-export async function xaccuracypp(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function xaccuracypp(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             if ((score.accuracy * 100) >= challenge[2] && score.pp >= challenge[1]) {
                 return true;
             }
@@ -120,21 +104,76 @@ export async function xaccuracypp(challenge: number[], todayUnix: number, scores
 
 // ------------------------------------- XACCURACYNOTES -------------------------------------
 
-export async function xaccuracynotes(challenge: number[], todayUnix: number, scores: BLScores): Promise<boolean> {
+export function xaccuracynotes(challenge: number[], todayUnix: number, scores: BLScores): boolean {
     for (const score of scores.data) {
-        if (parseInt(score.timeset) >= todayUnix) {
+        if (score.timepost >= todayUnix) {
             if ((score.accuracy * 100) >= challenge[1]) {
-                const map = await BeatSaver.maps.hash(score.leaderboard.song.hash);
-
-                for (const diff of map.versions[0].diffs) {
-                    if (diff.difficulty === score.leaderboard.difficulty.difficultyName) {
-                        if (diff.notes >= challenge[0]) {
-                            return true;
-                        }
-                    }
+                if (score.leaderboard.difficulty.notes >= challenge[0]) {
+                    return true;
                 }
             }
         }
+    }
+
+    return false;
+}
+
+// ------------------------------------- FCXMAPS -------------------------------------
+
+export function fcxmaps(challenge: number[], todayUnix: number, scores: BLScores): boolean {
+    let maps = 0;
+
+    for (const score of scores.data) {
+        if (score.timepost >= todayUnix) {
+            if (score.fullCombo) maps++
+        }
+    }
+
+    if (maps >= challenge[0]) {
+        return true;
+    }
+
+    return false;
+}
+
+// ------------------------------------- XACCURACYXMAPS -------------------------------------
+
+export function xaccuracyxmaps(challenge: number[], todayUnix: number, scores: BLScores): boolean {
+    let maps = 0;
+
+    for (const score of scores.data) {
+        if (score.timepost >= todayUnix) {
+            if ((score.accuracy * 100) >= challenge[1]) {
+                if (score.leaderboard.difficulty.notes >= challenge[2]) {
+                    maps++;
+                }
+            }
+        }
+    }
+
+    if (maps >= challenge[0]) {
+        return true;
+    }
+
+    return false;
+}
+
+// ------------------------------------- XMINUTEXMAPS -------------------------------------
+
+export function xminutexmaps(challenge: number[], todayUnix: number, scores: BLScores): boolean {
+    let maps = 0;
+
+    for (const score of scores.data) {
+        if (score.timepost >= todayUnix) {
+            score.leaderboard.song.difficulties[0].notes
+            if (score.leaderboard.song.duration >= challenge[1]) {
+                maps++;
+            }
+        }
+    }
+
+    if (maps >= challenge[0]) {
+        return true;
     }
 
     return false;

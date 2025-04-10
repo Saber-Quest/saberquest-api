@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, NotFoundException} from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { createBuffer, downloadAvatar } from 'src/util/images';
 import { Request, Response } from 'express';
@@ -7,7 +7,8 @@ import { generateState } from 'src/util/state';
 
 @Injectable()
 export class LoginService {
-    constructor (private readonly prisma: PrismaService) {}
+    private readonly logger = new Logger(LoginService.name);
+    constructor(private readonly prisma: PrismaService) { }
     callbacks: { identifier: string, callback: string }[] = [];
     activeRequests: string[] = [];
 
@@ -69,16 +70,62 @@ export class LoginService {
         }
     }
 
-    async loginBeatleader(code: string, iss: string, callback: string, req: Request, res: Response) {
+    async loginBeatleader(code: string, iss: string, callback: string, res: Response, state?: string) {
         if (typeof code != "string") {
-            const identifier = String(req.ip || req.headers["x-forwarded-for"]);
+            const identifier = generateState();
             this.callbacks.push({ identifier, callback });
             this.activeRequests.push(identifier);
-            res.redirect(`https://api.beatleader.xyz/oauth2/authorize?client_id=${process.env.BEATLEADER_ID}&response_type=code&redirect_uri=${process.env.REDIRECT_URI_API}/login/beatleader&scope=profile`);
+            return res.redirect(`https://api.beatleader.com/oauth2/authorize?client_id=${process.env.BEATLEADER_ID}&response_type=code&redirect_uri=${process.env.REDIRECT_URI_API}/login/beatleader&scope=profile&state=${identifier}`);
         }
+
+        const params = new URLSearchParams();
+        params.append('grant_type', 'authorization_code');
+        params.append('client_id', process.env.BEATLEADER_ID as string);
+        params.append('client_secret', process.env.BEATLEADER_SECRET as string);
+        params.append('code', code);
+        params.append('redirect_uri', `${process.env.REDIRECT_URI_API}/login/beatleader`);
+
+        const response = await fetch("https://api.beatleader.com/oauth2/token", {
+            method: 'POST',
+            headers: {
+                'Content-Type': "application/x-www-form-urlencoded"
+            },
+            body: params.toString()
+        }).then(res => res.json());
+
+        const token = response.access_token;
+
+        if (!token) {
+            throw new InternalServerErrorException();
+        }
+
+        const user = await fetch("https://api.beatleader.com/oauth2/identity", {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (user.status !== 200) {
+            this.logger.error("BeatLeader oauth rejected.");
+            throw new InternalServerErrorException();
+        }
+
+        const userState = this.callbacks.find(c => c.identifier === state);
+
+        if (!userState) throw new UnauthorizedException();
+
+        setTimeout(() => {
+            const index = this.activeRequests.indexOf(userState.identifier);
+            if (index > -1) this.activeRequests.splice(index, 1);
+        }, 1000 * 15)
+
+        const info = await user.json();
+
+        res.redirect(`${process.env.REDIRECT_URI_API}/login?id=${info.id}&state=${userState.identifier}`)
     }
 
-    loginSteam(state: string, callback: string, steamIdentity: string, req: Request, res: Response) {
+    loginSteam(state: string, callback: string, steamIdentity: string, res: Response) {
         if (typeof state != "string") {
             const identifier = generateState();
             this.callbacks.push({ identifier, callback });

@@ -20,9 +20,19 @@ export class LoginController {
         @Query('state') state: string,
         @Query('callback') callback: string,
         @Query('openid.identity') steamIdentity: string,
-        @Req() req: Request,
         @Res() res: Response
     ) {
-        return this.loginService.loginSteam(state, callback, steamIdentity, req, res);
+        return this.loginService.loginSteam(state, callback, steamIdentity, res);
+    }
+
+    @Get("beatleader")
+    async loginBeatleader(
+        @Query('code') code: string,
+        @Query('callback') callback: string,
+        @Query('iss') iss: string,
+        @Query('state') state: string,
+        @Res() res: Response
+    ) {
+        return this.loginService.loginBeatleader(code, iss, callback, res, state);
     }
 }

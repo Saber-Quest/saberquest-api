@@ -75,11 +75,16 @@ export async function giveRewards(id: string, difficulty: number, challengeId: n
 
         const qp = Math.random() * (range[1] - range[0]) + range[0];
 
+        const difficultyDb = await prisma.difficulty.findFirst({ where: {
+            challengeId: challengeId,
+            difficulty: difficulty
+        }});
+
         const history = await prisma.challengeHistory.create({
             data: {
                 userId: id,
                 challengeId: challengeId,
-                difficultyId: difficulty,
+                difficultyId: difficultyDb?.id!,
                 completedAt: new Date(),
                 preference: player.preference,
                 qp: qp

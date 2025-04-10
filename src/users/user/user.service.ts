@@ -41,6 +41,7 @@ export class UserService {
     }
 
     async getUsers(page: number = 1, limit: number = 25, sorting: "rank" | "qp" = "rank", order: "asc" | "desc" = "asc", search: string = "") {
+        let rank = (page - 1) * limit + 1 as number;
         const users = await this.prisma.user.findMany({
             skip: (page - 1) * limit,
             take: limit,
@@ -76,7 +77,7 @@ export class UserService {
                 },
                 stats: {
                     challengesCompleted: u.challengeHistories.length,
-                    rank: u.rank,
+                    rank: rank++,
                     qp: u.qp,
                     value: u.value
                 },
@@ -150,6 +151,9 @@ export class UserService {
                     }
                 },
             },
+            orderBy: {
+                completedAt: "desc"
+            },
             take: 10
         });
 
@@ -191,6 +195,12 @@ export class UserService {
                 }
             });
 
+            const allHistory = await this.prisma.challengeHistory.count({
+                where: {
+                    userId: id
+                }
+            });
+
             return {
                 info: {
                     id: history[0].userId,
@@ -210,7 +220,7 @@ export class UserService {
                     banned: history[0].user.banned,
                 },
                 stats: {
-                    challengesCompleted: history.length,
+                    challengesCompleted: allHistory,
                     rank: history[0].user.rank,
                     qp: history[0].user.qp,
                     value: history[0].user.value

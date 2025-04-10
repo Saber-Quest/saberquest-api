@@ -6,6 +6,8 @@ import { scoreSaber } from 'src/util/challenges/scoresaber/complete';
 import { Checker } from 'src/util/challenges/checker';
 import { giveRewards } from 'src/util/challenges/giveReward';
 import { updateRanks } from 'src/util/calculateValue';
+import { mapChallenge } from 'src/util/challenges/mapChallenge';
+import { BeatSaver } from 'yabsl';
 
 enum Difficulty {
     Normal = 1,
@@ -115,6 +117,66 @@ export class ChallengesService {
         });
     }
 
+    async getMapChallenge() {
+        const challenge = await this.prisma.mapChallenge.findFirst({
+            orderBy: {
+                startedOn: "desc"
+            }
+        });
+
+        if (!challenge) throw new NotFoundException();
+
+        const map = await fetch(`https://beatsaver.com/api/maps/id/${challenge.mapId}`).then(res => res.json());
+
+        return {
+            mapId: challenge.mapId,
+            mapHash: challenge.mapHash,
+            name: map.name,
+            mappers: map.metadata.levelAuthorName,
+            image: map.versions[0].coverURL,
+            downloadURL: map.versions[0].downloadURL,
+            startedOn: challenge.startedOn.setUTCHours(0, 0, 0, 0),
+            willEnd: challenge.startedOn.setUTCHours(0, 0, 0, 0) + (60 * 60 * 24 * 7 * 1000)
+        }
+    }
+
+    async getMapLeaderboard(type: number) {
+        const leaderboard = await this.prisma.mapChallengeLeaderboard.findMany({
+            where: {
+                tier: type
+            },
+            orderBy: {
+                score: "desc"
+            },
+            include: {
+                user: true
+            },
+            take: 10
+        });
+
+        let rank = 1;
+
+        return leaderboard.map(l => {
+            return {
+                user: {
+                    id: l.user.id,
+                    username: l.user.username,
+                    images: {
+                        avatar: l.user.avatar,
+                        banners: {
+                            vertical: l.user.banner + "?type=ver",
+                            horizontal: l.user.banner + "?type=hor"
+                        },
+                        border: l.user.border
+                    },
+                    patreon: l.user.patreon,
+                },
+                rank: rank++,
+                score: l.score
+            }
+        });
+    }
+
     @Cron("0 * * * *")
     async switchDaily() {
         const date = new Date().setUTCHours(0, 0, 0, 0);
@@ -212,14 +274,14 @@ export class ChallengesService {
 
             if (!difficulty) continue;
 
-            let completed;
+            let completed = false;
 
             const challengeValues = difficulty.values.map(value => value.toNumber());
 
             if (user.preference == 1) {
-                completed = await beatLeader(challenge?.challengeSet.name as Checker, challengeValues, user.id);
+                completed = await beatLeader(challenge?.challengeSet.type as Checker, challengeValues, user.id);
             } else {
-                completed = await scoreSaber(challenge?.challengeSet.name as Checker, challengeValues, user.id);
+                completed = await scoreSaber(challenge?.challengeSet.type as Checker, challengeValues, user.id);
             }
 
             if (!completed) continue;
@@ -234,5 +296,25 @@ export class ChallengesService {
         await updateRanks();
 
         this.logger.log(`Bi-hourly challenge completion finished. ${completedUsers}/${totalUsers} users completed.`);
+    }
+
+    @Cron("5 */4 * * *")
+    async mapChallenge() {
+        this.logger.log("Running map challenge completion...");
+        const users = await this.prisma.user.findMany({
+            where: {
+                doesMapChallenge: true
+            }
+        });
+
+        let totalUsers = users.length;
+        let completedUsers = 0;
+
+        for (const user of users) {
+            if (await mapChallenge(user.id, user.preference)) completedUsers++;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        this.logger.log(`Map challenge completion finished. ${completedUsers}/${totalUsers} users had new/better score.`);
     }
 }

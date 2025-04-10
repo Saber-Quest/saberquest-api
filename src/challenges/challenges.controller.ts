@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param } from '@nestjs/common';
 import { ChallengesService } from './challenges.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
@@ -11,6 +11,25 @@ export class ChallengesController {
     @ApiResponse({ status: 200, description: "All challenges." })
     getAll() {
         return this.challengesService.getAll();
+    }
+
+    @Get("map")
+    @ApiOperation({ summary: "Get the map for the weekly map challenge." })
+    @ApiResponse({ status: 200, description: "Map." })
+    getMap() {
+        return this.challengesService.getMapChallenge();
+    }
+
+    @Get("map/leaderboard/:type")
+    @ApiOperation({ summary: "Get the leaderboard for the weekly map challenge." })
+    @ApiResponse({ status: 200, description: "Leaderboard." })
+    @ApiResponse({ status: 400, description: "Invalid leaderboard type." })
+    getMapLeaderboard(
+        @Param('type') type: string
+    ) {
+        const parsedType = parseInt(type);
+        if (isNaN(parsedType) || parsedType < 1 || parsedType > 3) throw new BadRequestException("Invalid leaderboard type.");
+        return this.challengesService.getMapLeaderboard(parsedType);
     }
 
     @Get("/daily")

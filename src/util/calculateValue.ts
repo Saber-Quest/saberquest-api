@@ -17,7 +17,13 @@ export async function calculateValue(id: string) {
             return;
         }
 
-        const value = items.reduce((acc, item) => acc + (item.item.value ?? 0), 0);
+        let value = 0;
+
+        items.forEach(i => {
+            for (let x = 0; x < i.amount; x++) {
+                if (i.item.value != null) value += i.item.value
+            }
+        })
 
         return value;
     } catch (error) {
