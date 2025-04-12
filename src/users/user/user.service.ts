@@ -72,7 +72,7 @@ export class UserService {
                     },
                     preference: u.preference,
                     patreon: u.patreon,
-                    autocomplete: u.autoComplete,
+                    autoComplete: u.autoComplete,
                     banned: u.banned
                 },
                 stats: {
@@ -112,8 +112,9 @@ export class UserService {
                 },
                 preference: user?.preference,
                 patreon: user?.patreon,
-                autocomplete: user?.autoComplete,
-                banned: user?.banned
+                autoComplete: user?.autoComplete,
+                banned: user?.banned,
+                mapChallenges: user?.doesMapChallenge
             },
             stats: {
                 challengesCompleted: user?.challengeHistories.length,
@@ -216,8 +217,9 @@ export class UserService {
                     },
                     preference: history[0].user.preference,
                     patreon: history[0].user.patreon,
-                    autocomplete: history[0].user.autoComplete,
+                    autoComplete: history[0].user.autoComplete,
                     banned: history[0].user.banned,
+                    mapChallenges: history[0].user.doesMapChallenge
                 },
                 stats: {
                     challengesCompleted: allHistory,
@@ -273,8 +275,9 @@ export class UserService {
                     },
                     preference: user?.preference,
                     patreon: user?.patreon,
-                    autocomplete: user?.autoComplete,
-                    banned: user?.banned
+                    autoComplete: user?.autoComplete,
+                    banned: user?.banned,
+                    mapChallenges: user?.doesMapChallenge
                 },
                 stats: {
                     challengesCompleted: 0,

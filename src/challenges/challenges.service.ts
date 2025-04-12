@@ -141,9 +141,18 @@ export class ChallengesService {
     }
 
     async getMapLeaderboard(type: number) {
+        const currentChallenge = await this.prisma.mapChallenge.findFirst({
+            orderBy: {
+                startedOn: "desc"
+            }
+        });
+    
+        if (!currentChallenge) throw new NotFoundException('No active map challenge found');
+    
         const leaderboard = await this.prisma.mapChallengeLeaderboard.findMany({
             where: {
-                tier: type
+                tier: type,
+                mapChallengeId: currentChallenge.id
             },
             orderBy: {
                 score: "desc"
@@ -153,9 +162,9 @@ export class ChallengesService {
             },
             take: 10
         });
-
+    
         let rank = 1;
-
+    
         return leaderboard.map(l => {
             return {
                 user: {
@@ -298,7 +307,7 @@ export class ChallengesService {
         this.logger.log(`Bi-hourly challenge completion finished. ${completedUsers}/${totalUsers} users completed.`);
     }
 
-    @Cron("5 */4 * * *")
+    @Cron("5 */2 * * *")
     async mapChallenge() {
         this.logger.log("Running map challenge completion...");
         const users = await this.prisma.user.findMany({
