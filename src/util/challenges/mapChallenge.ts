@@ -41,7 +41,7 @@ export async function mapChallenge(id: string, platform: number): Promise<boolea
             });
 
             scores.data.forEach(async (score) => {
-                if (score.leaderboard.id.split("x")[0] == map?.mapId) {
+                if (score.leaderboard.songHash == map?.mapHash) {
                     if (!leaderboard) {
                         await prisma.mapChallengeLeaderboard.create({
                             data: {
